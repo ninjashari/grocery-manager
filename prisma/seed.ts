@@ -87,34 +87,43 @@ async function main() {
 
   // Create generic products without brands
   const bananas = await prisma.product.upsert({
-    where: { name_brandId: { name: 'Bananas (per kg)', brandId: null } },
+    where: { 
+      barcode: 'GENERIC-BANANAS'  // Using barcode as unique identifier for generic products
+    },
     update: {},
     create: {
       name: 'Bananas (per kg)',
       description: 'Fresh bananas',
       category: 'Produce',
+      barcode: 'GENERIC-BANANAS',
       brandId: null,
     },
   })
 
   const eggs = await prisma.product.upsert({
-    where: { name_brandId: { name: 'Eggs (dozen)', brandId: null } },
+    where: { 
+      barcode: 'GENERIC-EGGS'
+    },
     update: {},
     create: {
       name: 'Eggs (dozen)',
       description: 'Fresh farm eggs',
-      category: 'Dairy',
+      category: 'Dairy & Eggs',
+      barcode: 'GENERIC-EGGS',
       brandId: null,
     },
   })
 
   const rice = await prisma.product.upsert({
-    where: { name_brandId: { name: 'Basmati Rice 1kg', brandId: null } },
+    where: { 
+      barcode: 'GENERIC-RICE'
+    },
     update: {},
     create: {
       name: 'Basmati Rice 1kg',
       description: 'Premium basmati rice',
       category: 'Grains',
+      barcode: 'GENERIC-RICE',
       brandId: null,
     },
   })

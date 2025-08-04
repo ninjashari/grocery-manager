@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await db.user.findUnique({
           where: {
-            email: credentials.username
+            username: credentials.username
           }
         })
 
@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    signUp: '/auth/signup',
+    newUser: '/auth/signup', // Changed from signUp to newUser as per NextAuth types
   },
   callbacks: {
     jwt: async ({ token, user }) => {

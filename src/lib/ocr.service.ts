@@ -1,4 +1,6 @@
-import Tesseract from 'tesseract.js'
+'use client';
+
+import Tesseract from 'tesseract.js';
 
 export interface ParsedReceiptData {
   vendor: string
@@ -17,10 +19,24 @@ export interface ReceiptItem {
 
 export async function extractDataFromReceipt(imageFile: File): Promise<ParsedReceiptData> {
   try {
-    // Use Tesseract.js to extract text from the image
-    const { data: { text } } = await Tesseract.recognize(imageFile, 'eng', {
-      logger: m => console.log(m) // Progress logging
+    // Convert File to base64
+    const base64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        resolve(base64String);
+      };
+      reader.readAsDataURL(imageFile);
     });
+
+    // Use Tesseract to recognize text
+    const { data: { text } } = await Tesseract.recognize(
+      base64,
+      'eng',
+      {
+        logger: m => console.log(m)
+      }
+    );
 
     // Parse the extracted text
     const parsedData = parseReceiptText(text);
@@ -28,9 +44,7 @@ export async function extractDataFromReceipt(imageFile: File): Promise<ParsedRec
     
   } catch (error) {
     console.error('OCR Error:', error);
-    
-    // Fallback to mock data if OCR fails
-    return getMockReceiptData();
+    throw error; // Rethrow or handle as appropriate
   }
 }
 
@@ -46,9 +60,10 @@ function parseReceiptText(text: string): ParsedReceiptData {
   };
 
   // Patterns for extracting information
-  const pricePattern = /₹?\s*(\d+(?:\.\d{2})?)/g;
+  // Enhanced patterns for Indian currency
+  const pricePattern = /(?:₹|Rs\.?|INR)?\s*(\d+(?:[,.]\d{1,2})?)/g;
   const datePattern = /(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/;
-  const totalPattern = /(?:total|amount|grand\s*total|sum)[\s:]*₹?\s*(\d+(?:\.\d{2})?)/i;
+  const totalPattern = /(?:total|amount|grand\s*total|sum|payable)[\s:]*(?:₹|Rs\.?|INR)?\s*(\d+(?:[,.]\d{1,2})?)/i;
   
   // Common Indian store names
   const storePatterns = [
@@ -85,7 +100,7 @@ function parseReceiptText(text: string): ParsedReceiptData {
   for (const line of lines) {
     const totalMatch = line.match(totalPattern);
     if (totalMatch) {
-      result.total = parseFloat(totalMatch[1]);
+      result.total = parseIndianCurrency(totalMatch[1]);
       break;
     }
   }
@@ -114,12 +129,14 @@ function parseReceiptText(text: string): ParsedReceiptData {
       itemName = itemName.replace(/\s+/g, ' ').trim();
       
       if (itemName.length > 2) {
-        const lastPrice = parseFloat(prices[prices.length - 1][1]);
+        // Parse price considering Indian number format (removing commas)
+        const priceStr = prices[prices.length - 1][1].replace(/,/g, '');
+        const lastPrice = parseFloat(priceStr);
         let quantity = 1;
         let unitPrice = lastPrice;
         
-        // Try to extract quantity
-        const qtyMatch = line.match(/(\d+)\s*x/i);
+        // Try to extract quantity (supports both "2 x" and "2 Nos" formats)
+        const qtyMatch = line.match(/(\d+)\s*(?:x|nos?\.?|pcs?\.?|pieces?|units?)/i);
         if (qtyMatch) {
           quantity = parseInt(qtyMatch[1]);
           unitPrice = lastPrice / quantity;
@@ -128,8 +145,8 @@ function parseReceiptText(text: string): ParsedReceiptData {
         items.push({
           name: itemName,
           quantity: quantity,
-          unitPrice: Math.round(unitPrice * 100) / 100,
-          totalPrice: Math.round(lastPrice * 100) / 100,
+          unitPrice: Math.round(unitPrice * 100) / 100, // Round to nearest paisa
+          totalPrice: Math.round(lastPrice * 100) / 100, // Round to nearest paisa
           category: categorizeProduct(itemName)
         });
       }
@@ -141,11 +158,6 @@ function parseReceiptText(text: string): ParsedReceiptData {
   // If no total was found, calculate from items
   if (result.total === 0 && items.length > 0) {
     result.total = Math.round(items.reduce((sum, item) => sum + item.totalPrice, 0) * 100) / 100;
-  }
-
-  // If no items found, return mock data
-  if (items.length === 0) {
-    return getMockReceiptData();
   }
 
   return result;
@@ -175,70 +187,14 @@ function parseIndianDate(dateStr: string): string | null {
   return null;
 }
 
-function getMockReceiptData(): ParsedReceiptData {
-  return {
-    vendor: 'Big Bazaar',
-    date: new Date().toISOString().split('T')[0],
-    total: 1247.50,
-    items: [
-      {
-        name: 'Tata Tea Premium 1kg',
-        quantity: 1,
-        unitPrice: 320.00,
-        totalPrice: 320.00,
-        category: 'Beverages'
-      },
-      {
-        name: 'Amul Milk 1L',
-        quantity: 2,
-        unitPrice: 56.00,
-        totalPrice: 112.00,
-        category: 'Dairy'
-      },
-      {
-        name: 'Aashirvaad Atta 5kg',
-        quantity: 1,
-        unitPrice: 285.00,
-        totalPrice: 285.00,
-        category: 'Grains'
-      },
-      {
-        name: 'Bananas 1kg',
-        quantity: 1,
-        unitPrice: 40.00,
-        totalPrice: 40.00,
-        category: 'Produce'
-      },
-      {
-        name: 'Maggi Noodles 12pk',
-        quantity: 1,
-        unitPrice: 144.00,
-        totalPrice: 144.00,
-        category: 'Snacks'
-      },
-      {
-        name: 'Britannia Bread',
-        quantity: 2,
-        unitPrice: 28.00,
-        totalPrice: 56.00,
-        category: 'Bakery'
-      },
-      {
-        name: 'Surf Excel 1kg',
-        quantity: 1,
-        unitPrice: 165.00,
-        totalPrice: 165.00,
-        category: 'Household'
-      },
-      {
-        name: 'Basmati Rice 1kg',
-        quantity: 1,
-        unitPrice: 125.50,
-        totalPrice: 125.50,
-        category: 'Grains'
-      }
-    ]
-  };
+// Helper function to parse Indian currency amounts
+function parseIndianCurrency(amount: string): number {
+  // Remove all spaces, currency symbols, and commas
+  const cleaned = amount.replace(/[₹Rs\., ]/g, '');
+  // Convert to a number, assuming the last two digits are paise
+  const value = parseInt(cleaned);
+  // If the number is more than 2 digits, assume the last 2 are paise
+  return cleaned.length > 2 ? value / 100 : value;
 }
 
 // Helper function to determine product category from name

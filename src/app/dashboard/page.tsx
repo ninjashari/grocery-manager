@@ -25,21 +25,18 @@ async function getDashboardData(userId: string) {
       include: { items: { include: { product: true } } }
     }),
     db.inventoryItem.findMany({
-      where: { 
-        userId,
-        OR: [
-          { quantity: 0 },
-          { quantity: { lte: db.$fields.raw('lowStockThreshold') } }
-        ]
-      },
+      where: { userId },
       include: { product: { include: { brand: true } } },
+      orderBy: { quantity: 'asc' },
       take: 10
-    })
+    }).then(items => items.filter(item => 
+      item.quantity === 0 || (item.lowStockThreshold && item.quantity <= item.lowStockThreshold)
+    ))
   ])
 
   const totalInventoryValue = inventoryItems.reduce((sum, item) => {
-    // Estimate value based on recent prices - in a real app you'd have actual prices
-    return sum + (item.quantity * 3.50) // Average item price estimate
+    // Estimate value based on recent prices - using INR
+    return sum + (item.quantity * 100.00) // Average item price estimate in INR
   }, 0)
 
   const totalSpentThisMonth = await db.receiptItem.aggregate({

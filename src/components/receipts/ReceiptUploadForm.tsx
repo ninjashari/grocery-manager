@@ -42,31 +42,39 @@ export function ReceiptUploadForm() {
     setUploadStatus({ status: 'uploading', message: 'Uploading image...' })
 
     try {
+      setUploadStatus({ status: 'processing', message: 'Processing receipt with OCR...' })
+      
+      // Process image with OCR on the client side
+      const { extractDataFromReceipt } = await import('@/lib/ocr.service')
+      const receiptData = await extractDataFromReceipt(selectedFile)
+      
       // Create FormData for file upload
       const formData = new FormData()
       formData.append('receipt', selectedFile)
+      formData.append('receiptData', JSON.stringify(receiptData))
+
+      setUploadStatus({ status: 'uploading', message: 'Uploading processed data...' })
 
       const response = await fetch('/api/receipts/upload', {
         method: 'POST',
         body: formData,
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to upload receipt')
-      }
-
-      setUploadStatus({ status: 'processing', message: 'Processing receipt with OCR...' })
-
       const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to upload receipt')
+      }
 
       setUploadStatus({ 
         status: 'success', 
-        message: 'Receipt processed successfully!',
+        message: 'Receipt processed and uploaded successfully!',
         data: result
       })
 
       // Redirect to receipts page after a short delay
       setTimeout(() => {
+        router.refresh() // Refresh the current page data
         router.push('/receipts')
       }, 2000)
 

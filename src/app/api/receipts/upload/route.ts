@@ -19,8 +19,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Extract data using Tesseract.js OCR service
-    const receiptData = await extractDataFromReceipt(file)
+    // Get the pre-processed receipt data from the form
+    const receiptDataStr = formData.get('receiptData')
+    if (!receiptDataStr || typeof receiptDataStr !== 'string') {
+      return NextResponse.json({ error: 'Receipt data not provided' }, { status: 400 })
+    }
+
+    const receiptData = JSON.parse(receiptDataStr)
     
     // In production, you might want to save the file to storage here
     const imageUrl = `uploads/receipts/${Date.now()}-${file.name}`

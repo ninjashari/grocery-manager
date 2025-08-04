@@ -58,7 +58,25 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ user: userWithoutPassword }, { status: 201 })
   } catch (error) {
-    console.error('Signup error:', error)
+    // Improved error handling
+    console.error('Signup error:', error instanceof Error ? error.message : String(error))
+    
+    // Check if it's a database connection error
+    if (error instanceof Error && error.message.includes('connect')) {
+      return NextResponse.json(
+        { error: 'Database connection error' },
+        { status: 500 }
+      )
+    }
+    
+    // Check if it's a Prisma validation error
+    if (error instanceof Error && error.message.includes('Invalid')) {
+      return NextResponse.json(
+        { error: 'Invalid data provided' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
