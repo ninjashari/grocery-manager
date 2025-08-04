@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String            @id @default(cuid())
+  username          String            @unique
+  email             String            @unique
+  name              String?
+  image             String?
+  password          String?
+  emailVerified     DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  
+  accounts          Account[]
+  sessions          Session[]
+  receipts          Receipt[]
+  inventoryItems    InventoryItem[]
+  shoppingLists     ShoppingList[]
+  
+  @@map("users")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  products  Product[]
+  
+  @@map("brands")
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  category    String
+  brandId     String?
+  barcode     String?          @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  brand           Brand?             @relation(fields: [brandId], references: [id])
+  receiptItems    ReceiptItem[]
+  inventoryItems  InventoryItem[]
+  priceHistory    PriceHistory[]
+  shoppingListItems ShoppingListItem[]
+  
+  @@unique([name, brandId])
+  @@map("products")
+}
+
+model Receipt {
+  id          String        @id @default(cuid())
+  userId      String
+  vendor      String
+  date        DateTime
+  total       Float
+  imageUrl    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ReceiptItem[]
+  
+  @@map("receipts")
+}
+
+model ReceiptItem {
+  id          String   @id @default(cuid())
+  receiptId   String
+  productId   String
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+  createdAt   DateTime @default(now())
+  
+  receipt     Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  @@map("receipt_items")
+}
+
+model InventoryItem {
+  id            String   @id @default(cuid())
+  userId        String
+  productId     String
+  quantity      Int
+  lowStockThreshold Int   @default(2)
+  lastUpdated   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id])
+  
+  @@unique([userId, productId])
+  @@map("inventory_items")
+}
+
+model ShoppingList {
+  id          String              @id @default(cuid())
+  userId      String
+  name        String
+  completed   Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ShoppingListItem[]
+  
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id              String       @id @default(cuid())
+  shoppingListId  String
+  productId       String?
+  customName      String?
+  quantity        Int
+  completed       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  
+  shoppingList    ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  product         Product?     @relation(fields: [productId], references: [id])
+  
+  @@map("shopping_list_items")
+}
+
+model PriceHistory {
+  id          String   @id @default(cuid())
+  productId   String
+  price       Float
+  vendor      String
+  date        DateTime
+  createdAt   DateTime @default(now())
+  
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  @@map("price_history")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
