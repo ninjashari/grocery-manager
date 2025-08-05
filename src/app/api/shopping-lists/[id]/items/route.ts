@@ -6,9 +6,10 @@ import { shoppingListItemSchema } from '@/lib/validations'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
@@ -28,7 +29,7 @@ export async function POST(
     // Verify ownership of the shopping list
     const shoppingList = await db.shoppingList.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -44,7 +45,7 @@ export async function POST(
 
     const item = await db.shoppingListItem.create({
       data: {
-        shoppingListId: params.id,
+        shoppingListId: id,
         productId: productId || null,
         customName: customName || null,
         quantity,

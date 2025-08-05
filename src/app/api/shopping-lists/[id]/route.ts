@@ -5,9 +5,10 @@ import { db } from '@/lib/db'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
@@ -16,7 +17,7 @@ export async function GET(
 
     const shoppingList = await db.shoppingList.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       },
       include: {
@@ -50,9 +51,10 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
@@ -63,7 +65,7 @@ export async function PUT(
 
     const shoppingList = await db.shoppingList.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -76,7 +78,7 @@ export async function PUT(
     }
 
     const updatedList = await db.shoppingList.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         name: name ?? shoppingList.name,
         completed: completed ?? shoppingList.completed,
@@ -105,9 +107,10 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
@@ -116,7 +119,7 @@ export async function DELETE(
 
     const shoppingList = await db.shoppingList.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -129,7 +132,7 @@ export async function DELETE(
     }
 
     await db.shoppingList.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     return NextResponse.json({ success: true })

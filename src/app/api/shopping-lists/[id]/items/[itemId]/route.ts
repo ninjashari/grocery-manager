@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,12 +14,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id, itemId } = await params
     const { quantity, completed } = await req.json()
 
     // Verify ownership through shopping list
     const item = await db.shoppingListItem.findFirst({
       where: {
-        id: params.itemId,
+        id: itemId,
         shoppingList: {
           userId: session.user.id
         }
@@ -34,7 +35,7 @@ export async function PUT(
     }
 
     const updatedItem = await db.shoppingListItem.update({
-      where: { id: params.itemId },
+      where: { id: itemId },
       data: {
         quantity: quantity ?? item.quantity,
         completed: completed ?? item.completed,
@@ -59,7 +60,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -68,10 +69,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id, itemId } = await params
+
     // Verify ownership through shopping list
     const item = await db.shoppingListItem.findFirst({
       where: {
-        id: params.itemId,
+        id: itemId,
         shoppingList: {
           userId: session.user.id
         }
@@ -86,7 +89,7 @@ export async function DELETE(
     }
 
     await db.shoppingListItem.delete({
-      where: { id: params.itemId }
+      where: { id: itemId }
     })
 
     return NextResponse.json({ success: true })

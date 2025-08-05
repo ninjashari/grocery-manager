@@ -54,7 +54,7 @@ export default function ReceiptsPage() {
     }
 
     try {
-      const response = await fetch(`/api/receipts?id=${receiptId}`, {
+      const response = await fetch(`/api/receipts/${receiptId}`, {
         method: 'DELETE'
       })
 

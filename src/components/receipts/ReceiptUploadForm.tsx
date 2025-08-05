@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Upload, FileImage, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ParsedReceiptData, extractDataFromReceiptWithLLM } from '@/lib/llm-receipt.service'
+import { ReceiptPreviewTable } from './ReceiptPreviewTable'
 
 interface UploadStatus {
-  status: 'idle' | 'uploading' | 'processing' | 'success' | 'error'
+  status: 'idle' | 'uploading' | 'processing' | 'preview' | 'saving' | 'success' | 'error'
   message?: string
   data?: any
 }
@@ -18,12 +20,14 @@ export function ReceiptUploadForm() {
   const router = useRouter()
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ status: 'idle' })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [parsedData, setParsedData] = useState<ParsedReceiptData | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
     if (file) {
       setSelectedFile(file)
       setUploadStatus({ status: 'idle' })
+      setParsedData(null)
     }
   }, [])
 
@@ -36,24 +40,40 @@ export function ReceiptUploadForm() {
     maxSize: 5 * 1024 * 1024, // 5MB
   })
 
-  const handleUpload = async () => {
+  const handleProcess = async () => {
     if (!selectedFile) return
 
-    setUploadStatus({ status: 'uploading', message: 'Uploading image...' })
+    setUploadStatus({ status: 'processing', message: 'Processing receipt with AI...' })
 
     try {
-      setUploadStatus({ status: 'processing', message: 'Processing receipt with OCR...' })
+      // Process image with LLM-enhanced OCR
+      const receiptData = await extractDataFromReceiptWithLLM(selectedFile)
       
-      // Process image with OCR on the client side
-      const { extractDataFromReceipt } = await import('@/lib/ocr.service')
-      const receiptData = await extractDataFromReceipt(selectedFile)
-      
+      setParsedData(receiptData)
+      setUploadStatus({ 
+        status: 'preview', 
+        message: 'Receipt processed successfully! Review the data below.' 
+      })
+
+    } catch (error) {
+      console.error('Processing error:', error)
+      setUploadStatus({ 
+        status: 'error', 
+        message: 'Failed to process receipt. Please try again.' 
+      })
+    }
+  }
+
+  const handleConfirmUpload = async () => {
+    if (!selectedFile || !parsedData) return
+
+    setUploadStatus({ status: 'saving', message: 'Saving receipt...' })
+
+    try {
       // Create FormData for file upload
       const formData = new FormData()
       formData.append('receipt', selectedFile)
-      formData.append('receiptData', JSON.stringify(receiptData))
-
-      setUploadStatus({ status: 'uploading', message: 'Uploading processed data...' })
+      formData.append('receiptData', JSON.stringify(parsedData))
 
       const response = await fetch('/api/receipts/upload', {
         method: 'POST',
@@ -68,13 +88,13 @@ export function ReceiptUploadForm() {
 
       setUploadStatus({ 
         status: 'success', 
-        message: 'Receipt processed and uploaded successfully!',
+        message: 'Receipt saved successfully!',
         data: result
       })
 
       // Redirect to receipts page after a short delay
       setTimeout(() => {
-        router.refresh() // Refresh the current page data
+        router.refresh()
         router.push('/receipts')
       }, 2000)
 
@@ -82,18 +102,39 @@ export function ReceiptUploadForm() {
       console.error('Upload error:', error)
       setUploadStatus({ 
         status: 'error', 
-        message: 'Failed to process receipt. Please try again.' 
+        message: 'Failed to save receipt. Please try again.' 
       })
     }
+  }
+
+  const handleDataChange = (newData: ParsedReceiptData) => {
+    setParsedData(newData)
+  }
+
+  const handleCancelPreview = () => {
+    setParsedData(null)
+    setUploadStatus({ status: 'idle' })
   }
 
   const resetUpload = () => {
     setSelectedFile(null)
     setUploadStatus({ status: 'idle' })
+    setParsedData(null)
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Show preview table if data is available */}
+      {(uploadStatus.status === 'preview' || uploadStatus.status === 'saving') && parsedData ? (
+        <ReceiptPreviewTable
+          data={parsedData}
+          onDataChange={handleDataChange}
+          onConfirm={handleConfirmUpload}
+          onCancel={handleCancelPreview}
+          isLoading={uploadStatus.status === 'saving'}
+        />
+      ) : (
+        <>
       <Card>
         <CardHeader>
           <CardTitle>Upload Receipt</CardTitle>
@@ -146,7 +187,7 @@ export function ReceiptUploadForm() {
           </div>
 
           {/* Upload Status */}
-          {uploadStatus.status !== 'idle' && (
+          {uploadStatus.status !== 'idle' && uploadStatus.status !== 'preview' && (
             <div className="mt-6">
               <Card className={cn(
                 "border-l-4",
@@ -156,7 +197,7 @@ export function ReceiptUploadForm() {
               )}>
                 <CardContent className="pt-6">
                   <div className="flex items-center space-x-3">
-                    {uploadStatus.status === 'uploading' || uploadStatus.status === 'processing' ? (
+                    {uploadStatus.status === 'processing' || uploadStatus.status === 'saving' ? (
                       <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                     ) : uploadStatus.status === 'success' ? (
                       <CheckCircle className="h-5 w-5 text-green-600" />
@@ -192,10 +233,10 @@ export function ReceiptUploadForm() {
               Cancel
             </Button>
             <Button 
-              onClick={handleUpload}
-              disabled={!selectedFile || uploadStatus.status === 'uploading' || uploadStatus.status === 'processing'}
+              onClick={handleProcess}
+              disabled={!selectedFile || uploadStatus.status === 'processing' || uploadStatus.status === 'saving'}
             >
-              {uploadStatus.status === 'uploading' || uploadStatus.status === 'processing' ? (
+              {uploadStatus.status === 'processing' ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
@@ -223,6 +264,8 @@ export function ReceiptUploadForm() {
           </ul>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   )
 }

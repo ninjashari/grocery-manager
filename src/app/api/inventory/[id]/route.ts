@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,6 +14,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const { quantity, lowStockThreshold } = await req.json()
 
     if (typeof quantity !== 'number' || quantity < 0) {
@@ -26,7 +27,7 @@ export async function PUT(
     // Verify ownership
     const existingItem = await db.inventoryItem.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -40,7 +41,7 @@ export async function PUT(
 
     // Update the inventory item
     const updatedItem = await db.inventoryItem.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         quantity,
         lowStockThreshold: lowStockThreshold ?? existingItem.lowStockThreshold,
@@ -66,7 +67,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -75,10 +76,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Verify ownership
     const existingItem = await db.inventoryItem.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -92,7 +95,7 @@ export async function DELETE(
 
     // Delete the inventory item
     await db.inventoryItem.delete({
-      where: { id: params.id }
+      where: { id: id }
     })
 
     return NextResponse.json({ success: true })

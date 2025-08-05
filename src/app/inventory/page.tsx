@@ -96,7 +96,8 @@ export default function InventoryPage() {
   }
 
   const getUniqueCategories = () => {
-    const categories = [...new Set(items.map(item => item.product.category))]
+    const categorySet = new Set(items.map(item => item.product.category))
+    const categories = Array.from(categorySet)
     return categories.sort()
   }
 

@@ -157,3 +157,5 @@ pnpm-lock.yaml
 .env.development
 .env.test
 .env.production
+
+*.jpg
