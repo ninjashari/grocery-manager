@@ -42,7 +42,7 @@ class OCRService:
             return "", 0.0
     
     def _preprocess_image(self, image: Image.Image) -> Image.Image:
-        """Preprocess image to improve OCR accuracy"""
+        """Preprocess image to improve OCR accuracy for receipts"""
         try:
             # Convert to RGB if not already
             if image.mode != 'RGB':
@@ -54,16 +54,26 @@ class OCRService:
             # Convert to grayscale
             gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
             
-            # Apply Gaussian blur to reduce noise
-            blurred = cv2.GaussianBlur(gray, (1, 1), 0)
+            # Increase image size for better recognition (scale up significantly)
+            height, width = gray.shape
+            scale_factor = 3.0  # Scale up 3x for better text recognition
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            gray = cv2.resize(gray, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
             
-            # Apply threshold to get better contrast
-            _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            # Apply bilateral filter to reduce noise while keeping edges sharp
+            bilateral = cv2.bilateralFilter(gray, 9, 75, 75)
             
-            # Morphological operations to clean up
-            kernel = np.ones((1, 1), np.uint8)
+            # Apply CLAHE for better contrast
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+            enhanced = clahe.apply(bilateral)
+            
+            # Apply Otsu's thresholding
+            _, thresh = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            
+            # Minimal morphological operations - just to clean up
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
             processed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-            processed = cv2.morphologyEx(processed, cv2.MORPH_OPEN, kernel)
             
             # Convert back to PIL Image
             return Image.fromarray(processed)
@@ -100,12 +110,13 @@ class OCRService:
             # Convert to PIL Image
             image = Image.open(io.BytesIO(image_bytes))
             
-            # Try different OCR configurations
+            # Try different OCR configurations optimized for receipts
             configs = [
-                '--psm 6',  # Uniform block of text
+                '--psm 6',  # Uniform block of text - works best for receipts
                 '--psm 4',  # Single column of text
                 '--psm 3',  # Fully automatic page segmentation
-                '--psm 8',  # Single word
+                '--psm 7',  # Single text line
+                '--psm 11', # Sparse text
             ]
             
             best_text = ""
