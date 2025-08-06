@@ -5,7 +5,7 @@ import { Receipt } from '@/types/receipt'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Receipt as ReceiptIcon, Eye, Trash2 } from 'lucide-react'
+import { Receipt as ReceiptIcon, Eye, Edit2, Trash2 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 interface ReceiptListProps {
@@ -79,6 +79,12 @@ export function ReceiptList({ receipts, onDelete }: ReceiptListProps) {
                   <Button variant="outline" size="sm">
                     <Eye className="h-4 w-4 mr-1" />
                     View Details
+                  </Button>
+                </Link>
+                <Link href={`/receipts/${receipt.id}/edit`}>
+                  <Button variant="outline" size="sm">
+                    <Edit2 className="h-4 w-4 mr-1" />
+                    Edit
                   </Button>
                 </Link>
               </div>

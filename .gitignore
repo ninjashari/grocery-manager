@@ -159,3 +159,22 @@ pnpm-lock.yaml
 .env.production
 
 *.jpg
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+
+# Python virtual environment
+venv/
+.venv/
+.env/
+.env.local
+.env.development
+.env.test
+.env.production

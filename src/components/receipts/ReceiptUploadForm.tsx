@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Upload, FileImage, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ParsedReceiptData, extractDataFromReceiptWithLLM } from '@/lib/llm-receipt.service'
+import { ParsedReceiptData, extractDataFromReceiptPython, checkPythonAPIHealth } from '@/lib/python-receipt.service'
 import { ReceiptPreviewTable } from './ReceiptPreviewTable'
 
 interface UploadStatus {
@@ -43,23 +43,35 @@ export function ReceiptUploadForm() {
   const handleProcess = async () => {
     if (!selectedFile) return
 
-    setUploadStatus({ status: 'processing', message: 'Processing receipt with AI...' })
+    // Check if Python API is available
+    setUploadStatus({ status: 'processing', message: 'Checking Python API...' })
+    
+    const isAPIHealthy = await checkPythonAPIHealth()
+    if (!isAPIHealthy) {
+      setUploadStatus({ 
+        status: 'error', 
+        message: 'Python API is not available. Please ensure the Python backend is running on port 9000.' 
+      })
+      return
+    }
+
+    setUploadStatus({ status: 'processing', message: 'Processing receipt with Python OCR...' })
 
     try {
-      // Process image with LLM-enhanced OCR
-      const receiptData = await extractDataFromReceiptWithLLM(selectedFile)
+      // Process image with Python OCR API
+      const receiptData = await extractDataFromReceiptPython(selectedFile)
       
       setParsedData(receiptData)
       setUploadStatus({ 
         status: 'preview', 
-        message: 'Receipt processed successfully! Review the data below.' 
+        message: `Receipt processed successfully! Found ${receiptData.items.length} items from ${receiptData.vendor}. Review the data below.` 
       })
 
     } catch (error) {
       console.error('Processing error:', error)
       setUploadStatus({ 
         status: 'error', 
-        message: 'Failed to process receipt. Please try again.' 
+        message: `Failed to process receipt: ${error instanceof Error ? error.message : 'Unknown error'}` 
       })
     }
   }
@@ -139,7 +151,7 @@ export function ReceiptUploadForm() {
         <CardHeader>
           <CardTitle>Upload Receipt</CardTitle>
           <CardDescription>
-            Upload an image of your grocery receipt to automatically extract and organize the data
+            Upload an image of your grocery receipt to automatically extract and organize the data using Python OCR
           </CardDescription>
         </CardHeader>
         <CardContent>

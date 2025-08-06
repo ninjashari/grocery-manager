@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Calendar, MapPin, Receipt as ReceiptIcon, Trash2, Download } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, Receipt as ReceiptIcon, Edit2, Trash2, Download } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   AlertDialog,
@@ -79,6 +79,10 @@ export function ReceiptDetailView({ receipt }: ReceiptDetailViewProps) {
         </div>
 
         <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={() => router.push(`/receipts/${receipt.id}/edit`)}>
+            <Edit2 className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export

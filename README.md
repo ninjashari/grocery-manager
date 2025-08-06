@@ -8,8 +8,8 @@ GroceriPal is a comprehensive web application built with the T3 Stack that helps
 
 ### 📋 Receipt Management
 - **Smart Receipt Upload**: Upload receipt images with drag-and-drop functionality
-- **Tesseract.js OCR**: In-house OCR processing using Tesseract.js with fallback to mock data
-- **Indian Receipt Support**: Optimized for Indian grocery stores (Big Bazaar, Reliance, DMart, etc.)
+- **Python OCR Backend**: Advanced OCR processing using Python with Tesseract and OpenCV
+- **Store-Specific Processing**: Specialized processors for KPN Fresh, DMart, and other Indian stores
 - **Receipt History**: View and manage all your processed receipts
 - **Automatic Inventory Updates**: Receipt items automatically update your inventory
 
@@ -35,50 +35,81 @@ GroceriPal is a comprehensive web application built with the T3 Stack that helps
 
 ## 🛠️ Technology Stack
 
+### Frontend
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: NextAuth.js (Username/Password only)
-- **OCR**: Tesseract.js for in-house receipt processing
 - **Charts**: Recharts for data visualizations
 - **UI Components**: Radix UI primitives
 - **Currency**: INR (Indian Rupee) support
 - **State Management**: React Context + Zustand (where needed)
 
+### Backend (Python API)
+- **Framework**: FastAPI
+- **OCR**: Tesseract + OpenCV with image preprocessing
+- **Image Processing**: PIL, NumPy for enhanced accuracy
+- **Store Processing**: Specialized processors for different receipt formats
+- **API Documentation**: Automatic OpenAPI/Swagger docs
+
 ## 📁 Project Structure
 
 ```
 grocery-manager/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── api/               # API routes
-│   │   ├── auth/              # Authentication pages
-│   │   ├── dashboard/         # Dashboard pages
-│   │   ├── receipts/          # Receipt management
-│   │   ├── inventory/         # Inventory management
-│   │   ├── shopping-lists/    # Shopping list functionality
-│   │   └── insights/          # Analytics dashboard
-│   ├── components/            # Reusable React components
-│   │   ├── ui/               # Base UI components
-│   │   ├── auth/             # Authentication components
-│   │   ├── receipts/         # Receipt-related components
-│   │   ├── inventory/        # Inventory components
-│   │   ├── shopping-lists/   # Shopping list components
-│   │   ├── insights/         # Analytics components
-│   │   └── layout/           # Layout components
-│   ├── lib/                  # Utility libraries
-│   │   ├── auth.ts           # NextAuth configuration
-│   │   ├── db.ts             # Database connection
-│   │   ├── ocr.service.ts    # OCR service (mock implementation)
-│   │   ├── utils.ts          # Utility functions
-│   │   └── validations.ts    # Zod schemas
-│   └── types/                # TypeScript type definitions
-├── prisma/                   # Database schema and migrations
-└── public/                   # Static assets
+├── src/                           # Next.js Frontend
+│   ├── app/                      # Next.js App Router pages
+│   │   ├── api/                 # API routes
+│   │   ├── auth/                # Authentication pages
+│   │   ├── dashboard/           # Dashboard pages
+│   │   ├── receipts/            # Receipt management
+│   │   ├── inventory/           # Inventory management
+│   │   ├── shopping-lists/      # Shopping list functionality
+│   │   └── insights/            # Analytics dashboard
+│   ├── components/              # Reusable React components
+│   │   ├── ui/                 # Base UI components
+│   │   ├── auth/               # Authentication components
+│   │   ├── receipts/           # Receipt-related components
+│   │   ├── inventory/          # Inventory components
+│   │   ├── shopping-lists/     # Shopping list components
+│   │   ├── insights/           # Analytics components
+│   │   └── layout/             # Layout components
+│   ├── lib/                    # Utility libraries
+│   │   ├── auth.ts             # NextAuth configuration
+│   │   ├── db.ts               # Database connection
+│   │   ├── python-receipt.service.ts  # Python API client
+│   │   ├── utils.ts            # Utility functions
+│   │   └── validations.ts      # Zod schemas
+│   └── types/                  # TypeScript type definitions
+├── python-backend/             # Python OCR API
+│   ├── app/
+│   │   ├── models/             # Pydantic models
+│   │   ├── processors/         # Store-specific processors
+│   │   ├── services/           # Business logic
+│   │   ├── utils/              # OCR and image processing
+│   │   └── main.py             # FastAPI application
+│   ├── requirements.txt        # Python dependencies
+│   └── run.py                  # Development server
+├── prisma/                     # Database schema and migrations
+├── public/                     # Static assets
+└── start-dev.sh               # Development startup script
 ```
 
 ## 🎯 Getting Started
+
+### Quick Start (Recommended)
+Use the automated startup script to run both frontend and backend:
+
+```bash
+git clone <repository-url>
+cd grocery-manager
+npm install
+./start-dev.sh
+```
+
+This will set up everything automatically and start both services.
+
+### Manual Setup
 
 1. **Clone the repository**
    ```bash
@@ -86,12 +117,29 @@ grocery-manager/
    cd grocery-manager
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Set up Python backend**
+   ```bash
+   cd python-backend
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+4. **Install system dependencies**
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get install tesseract-ocr
+   
+   # macOS
+   brew install tesseract
+   ```
+
+5. **Set up environment variables**
    ```bash
    cp .env.example .env.local
    ```
@@ -100,13 +148,13 @@ grocery-manager/
    ```env
    DATABASE_URL="postgresql://username:password@localhost:5432/groceripal"
    NEXTAUTH_SECRET="your-secret-key-here"
-   NEXTAUTH_URL="http://localhost:3000"
-   TESSERACT_CACHE_PATH="/tmp/tesseract"
+   NEXTAUTH_URL="http://localhost:5000"
+   NEXT_PUBLIC_PYTHON_API_URL="http://localhost:9000"
    DEFAULT_CURRENCY="INR"
    DEFAULT_LOCALE="en-IN"
    ```
 
-4. **Set up the database**
+6. **Set up the database**
    ```bash
    # Generate Prisma client
    npm run db:generate
@@ -118,13 +166,24 @@ grocery-manager/
    npm run db:seed
    ```
 
-5. **Start the development server**
+7. **Start the services**
+   
+   In one terminal (Python backend):
+   ```bash
+   cd python-backend
+   source venv/bin/activate
+   python run.py
+   ```
+   
+   In another terminal (Frontend):
    ```bash
    npm run dev
    ```
 
-6. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+8. **Open your browser**
+   - Frontend: [http://localhost:5000](http://localhost:5000)
+   - Python API: [http://localhost:9000](http://localhost:9000)
+   - API Docs: [http://localhost:9000/docs](http://localhost:9000/docs)
 
 ## 📊 Database Schema
 
@@ -141,30 +200,36 @@ The application uses PostgreSQL with the following main entities:
 
 ## 🔧 OCR Integration
 
-The application uses **Tesseract.js** for in-house OCR processing with intelligent parsing for Indian grocery receipts.
+The application uses a **Python backend** with advanced OCR processing for superior receipt analysis.
 
 ### Features:
-- **No External Dependencies**: Self-contained OCR processing
-- **Indian Store Support**: Recognizes major Indian grocery chains
+- **Advanced OCR**: Python Tesseract with OpenCV image preprocessing
+- **Store-Specific Processing**: Specialized processors for KPN Fresh, DMart, and other chains
+- **Image Enhancement**: Gaussian blur, thresholding, and morphological operations
 - **Price Pattern Recognition**: Handles Indian pricing formats (₹ symbol)
 - **Date Format Support**: Parses common Indian date formats
 - **Product Categorization**: Intelligent categorization for Indian products
-- **Fallback System**: Mock data fallback if OCR fails
+- **OCR Confidence Scoring**: Quality assessment of text extraction
 
 ### OCR Processing Pipeline:
-1. **Text Extraction**: Tesseract.js extracts raw text from receipt images
-2. **Store Recognition**: Identifies common Indian grocery stores (Big Bazaar, Reliance, DMart, etc.)
-3. **Item Parsing**: Extracts product names, quantities, and prices
-4. **Date Processing**: Handles DD/MM/YYYY and DD-MM-YYYY formats
-5. **Category Assignment**: Auto-categorizes products based on Indian grocery items
+1. **Image Preprocessing**: OpenCV enhances image quality (denoising, contrast, thresholding)
+2. **Text Extraction**: Multiple Tesseract configurations for optimal results
+3. **Store Detection**: Identifies store type and selects appropriate processor
+4. **Format-Specific Parsing**: Tailored parsing for each store's receipt format
+5. **Data Validation**: Validates extracted data and calculates totals
+6. **Category Assignment**: Auto-categorizes products based on Indian grocery items
 
-### Indian Product Categories:
-- **Dairy**: Amul, Paneer, Curd, Ghee
-- **Grains**: Basmati, Atta, Aashirvaad, Rice
-- **Beverages**: Tata Tea, Nescafe
-- **Spices**: MDH, Everest, Masala
-- **Household**: Surf Excel, Vim, Lizol
-- **And many more...**
+### Supported Store Formats:
+- **KPN Fresh**: Tabular format with MRP/Rate/Qty/Amount columns
+- **DMart**: Vertical list format with quantity and pricing
+- **Extensible**: Easy to add new store processors
+
+### Python Backend Architecture:
+- **FastAPI**: High-performance async API framework
+- **Modular Processors**: Store-specific processing logic
+- **Image Processing**: PIL + OpenCV for preprocessing
+- **Error Handling**: Comprehensive error handling and logging
+- **API Documentation**: Auto-generated OpenAPI docs
 
 ## 🚀 Deployment
 
