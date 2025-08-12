@@ -108,16 +108,19 @@ model Receipt {
 }
 
 model ReceiptItem {
-  id          String   @id @default(cuid())
-  receiptId   String
-  productId   String
-  quantity    Int
-  unitPrice   Float
-  totalPrice  Float
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  receiptId     String
+  productId     String
+  quantity      Int
+  unitPrice     Float
+  totalPrice    Float
+  expenseTag    String?
+  trackQuantity Float?
+  quantityUnit  String?
+  createdAt     DateTime @default(now())
   
-  receipt     Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id])
+  receipt       Receipt  @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id])
   
   @@map("receipt_items")
 }

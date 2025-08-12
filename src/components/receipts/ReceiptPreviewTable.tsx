@@ -20,9 +20,32 @@ interface ReceiptPreviewTableProps {
 }
 
 const categories = [
-  'Dairy', 'Produce', 'Meat', 'Bakery', 'Grains', 
-  'Beverages', 'Spices', 'Snacks', 'Household', 'Oil', 'Other'
+  'Dairy', 'Produce', 'Meat', 'Bakery', 'Grains', 'Pulses',
+  'Beverages', 'Spices', 'Condiments', 'Snacks', 'Nuts & Seeds', 
+  'Frozen Foods', 'Personal Care', 'Household', 'Oil', 'Other'
 ]
+
+const getCategoryColor = (category: string) => {
+  const colors: Record<string, string> = {
+    'Dairy': 'bg-blue-100 text-blue-800 border-blue-200',
+    'Produce': 'bg-green-100 text-green-800 border-green-200',
+    'Meat': 'bg-red-100 text-red-800 border-red-200',
+    'Bakery': 'bg-amber-100 text-amber-800 border-amber-200',
+    'Grains': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    'Pulses': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'Beverages': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    'Spices': 'bg-orange-100 text-orange-800 border-orange-200',
+    'Condiments': 'bg-purple-100 text-purple-800 border-purple-200',
+    'Snacks': 'bg-pink-100 text-pink-800 border-pink-200',
+    'Nuts & Seeds': 'bg-teal-100 text-teal-800 border-teal-200',
+    'Frozen Foods': 'bg-sky-100 text-sky-800 border-sky-200',
+    'Personal Care': 'bg-rose-100 text-rose-800 border-rose-200',
+    'Household': 'bg-gray-100 text-gray-800 border-gray-200',
+    'Oil': 'bg-lime-100 text-lime-800 border-lime-200',
+    'Other': 'bg-slate-100 text-slate-800 border-slate-200'
+  }
+  return colors[category] || colors['Other']
+}
 
 export function ReceiptPreviewTable({ 
   data, 
@@ -35,11 +58,11 @@ export function ReceiptPreviewTable({
   const [editingHeader, setEditingHeader] = useState(false)
   const [editedData, setEditedData] = useState<ParsedReceiptData>(data)
 
-  const handleItemEdit = (index: number, field: keyof ReceiptItem, value: string | number) => {
+  const handleItemEdit = (index: number, field: keyof ReceiptItem | 'expenseTag' | 'trackQuantity' | 'quantityUnit', value: string | number) => {
     const newItems = [...editedData.items]
     newItems[index] = {
       ...newItems[index],
-      [field]: field === 'quantity' || field === 'unitPrice' || field === 'totalPrice' 
+      [field]: field === 'quantity' || field === 'unitPrice' || field === 'totalPrice' || field === 'trackQuantity'
         ? parseFloat(value.toString()) || 0 
         : value
     }
@@ -80,12 +103,15 @@ export function ReceiptPreviewTable({
   }
 
   const handleAddItem = () => {
-    const newItem: ReceiptItem = {
+    const newItem: ReceiptItem & { expenseTag?: string; trackQuantity?: number; quantityUnit?: string } = {
       name: 'New Item',
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
-      category: 'Other'
+      category: 'Other',
+      expenseTag: '',
+      trackQuantity: 0,
+      quantityUnit: ''
     }
     const newItems = [...editedData.items, newItem]
     const newData = { ...editedData, items: newItems }
@@ -208,6 +234,9 @@ export function ReceiptPreviewTable({
                   <TableHead className="w-24">Unit Price</TableHead>
                   <TableHead className="w-24">Total</TableHead>
                   <TableHead className="w-28">Category</TableHead>
+                  <TableHead className="w-32">Expense Tag</TableHead>
+                  <TableHead className="w-24">Track Qty</TableHead>
+                  <TableHead className="w-24">Qty Unit</TableHead>
                   <TableHead className="w-20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -274,9 +303,54 @@ export function ReceiptPreviewTable({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.category}
+                        <Badge className={cn("text-xs border", getCategoryColor(item.category || 'Other'))}>
+                          {item.category || 'Other'}
                         </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingItem === index ? (
+                        <Input
+                          value={(item as any).expenseTag || ''}
+                          onChange={(e) => handleItemEdit(index, 'expenseTag', e.target.value)}
+                          placeholder="Tag for tracking"
+                          className="w-28"
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-600">
+                          {(item as any).expenseTag || '-'}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingItem === index ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={(item as any).trackQuantity || 0}
+                          onChange={(e) => handleItemEdit(index, 'trackQuantity', e.target.value)}
+                          placeholder="0"
+                          className="w-20"
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-600">
+                          {(item as any).trackQuantity || '-'}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingItem === index ? (
+                        <Input
+                          value={(item as any).quantityUnit || ''}
+                          onChange={(e) => handleItemEdit(index, 'quantityUnit', e.target.value)}
+                          placeholder="kg, pcs, ml"
+                          className="w-20"
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-600">
+                          {(item as any).quantityUnit || '-'}
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>

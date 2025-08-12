@@ -15,6 +15,9 @@ export interface ReceiptItem {
   unitPrice: number
   totalPrice: number
   category?: string
+  expenseTag?: string
+  trackQuantity?: number
+  quantityUnit?: string
 }
 
 export interface ReceiptProcessResponse {

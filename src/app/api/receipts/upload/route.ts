@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { extractDataFromReceipt, categorizeProduct } from '@/lib/ocr.service'
+import { extractDataFromReceiptPython } from '@/lib/python-receipt.service'
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
       const receiptItems = []
       
       for (const item of receiptData.items) {
-        // Determine category if not provided
-        const category = item.category || categorizeProduct(item.name)
+        // Determine category if not provided (Python service should provide this)
+        const category = item.category || 'Other'
         
         // Find or create the product
         let product = await tx.product.findFirst({

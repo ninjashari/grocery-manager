@@ -18,17 +18,45 @@ export function ReceiptEditForm({ receipt }: ReceiptEditFormProps) {
   const router = useRouter()
   // const { toast } = useToast()
   
+  // Helper function to format date
+  const formatDate = (date: any): string => {
+    try {
+      if (typeof date === 'string' && date.length > 0) {
+        // If it's already a string, check if it contains 'T' and split if needed
+        return date.includes('T') ? date.split('T')[0] : date;
+      } else if (date instanceof Date) {
+        // If it's a Date object, format to YYYY-MM-DD
+        return date.toISOString().split('T')[0];
+      } else if (date && typeof date === 'object' && date.toString) {
+        // Handle serialized Date objects
+        const dateStr = date.toString();
+        const parsedDate = new Date(dateStr);
+        if (!isNaN(parsedDate.getTime())) {
+          return parsedDate.toISOString().split('T')[0];
+        }
+      }
+    } catch (error) {
+      console.warn('Date formatting error:', error);
+    }
+    
+    // Fallback: return today's date
+    return new Date().toISOString().split('T')[0];
+  };
+
   // Convert Receipt type to ParsedReceiptData format
   const [editedData, setEditedData] = useState<ParsedReceiptData>({
     vendor: receipt.vendor,
-    date: receipt.date,
+    date: formatDate(receipt.date), // Safely convert to YYYY-MM-DD format
     total: receipt.total,
     items: receipt.items.map(item => ({
       name: item.product.name,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.totalPrice,
-      category: item.product.category
+      category: item.product.category,
+      expenseTag: item.expenseTag || '',
+      trackQuantity: item.trackQuantity || 0,
+      quantityUnit: item.quantityUnit || ''
     }))
   })
   

@@ -28,14 +28,19 @@ class BaseReceiptProcessor(ABC):
         """Categorize product based on name"""
         categories = {
             'Dairy': ['milk', 'cheese', 'yogurt', 'butter', 'cream', 'paneer', 'curd', 'ghee', 'amul'],
-            'Produce': ['banana', 'apple', 'orange', 'spinach', 'lettuce', 'tomato', 'onion', 'carrot', 'potato', 'mango'],
-            'Meat': ['chicken', 'mutton', 'fish', 'prawns', 'eggs'],
+            'Produce': ['banana', 'apple', 'orange', 'spinach', 'lettuce', 'tomato', 'onion', 'carrot', 'potato', 'mango', 'fruits', 'vegetables'],
+            'Meat': ['chicken', 'mutton', 'fish', 'prawns', 'eggs', 'meat'],
             'Bakery': ['bread', 'pav', 'bun', 'rusk', 'cake', 'biscuit', 'britannia'],
-            'Grains': ['rice', 'wheat', 'atta', 'flour', 'dal', 'basmati', 'aashirvaad'],
+            'Grains': ['rice', 'wheat', 'atta', 'flour', 'basmati', 'aashirvaad'],
+            'Pulses': ['dal', 'lentils', 'moong', 'toor', 'chana', 'rajma', 'urad', 'masoor', 'arhar'],
             'Beverages': ['tea', 'coffee', 'juice', 'water', 'cola', 'tata', 'nescafe'],
             'Spices': ['turmeric', 'chili', 'coriander', 'cumin', 'garam', 'masala', 'mdh', 'everest'],
+            'Condiments': ['sauce', 'ketchup', 'mayo', 'mayonnaise', 'chutney', 'pickle', 'jam', 'honey', 'vinegar', 'mustard sauce', 'soy sauce', 'tomato sauce', 'mint', 'tamarind', 'paste', 'spread'],
             'Snacks': ['chips', 'namkeen', 'biscuits', 'maggi', 'noodles', 'kurkure'],
-            'Household': ['soap', 'detergent', 'shampoo', 'surf', 'vim', 'lizol'],
+            'Nuts & Seeds': ['almonds', 'cashew', 'peanuts', 'walnuts', 'pistachios', 'seeds', 'nuts', 'groundnuts'],
+            'Frozen Foods': ['frozen', 'ice cream', 'ice', 'peas', 'corn'],
+            'Personal Care': ['soap', 'shampoo', 'toothpaste', 'deodorant', 'cream', 'lotion'],
+            'Household': ['detergent', 'surf', 'vim', 'lizol', 'cleaner', 'tissues'],
             'Oil': ['oil', 'sunflower', 'coconut', 'mustard', 'fortune', 'saffola']
         }
         

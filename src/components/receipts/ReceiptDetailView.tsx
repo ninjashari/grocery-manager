@@ -50,15 +50,22 @@ export function ReceiptDetailView({ receipt }: ReceiptDetailViewProps) {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      'Dairy': 'bg-blue-100 text-blue-800',
-      'Produce': 'bg-green-100 text-green-800',
-      'Meat': 'bg-red-100 text-red-800',
-      'Bakery': 'bg-yellow-100 text-yellow-800',
-      'Grains': 'bg-orange-100 text-orange-800',
-      'Beverages': 'bg-purple-100 text-purple-800',
-      'Snacks': 'bg-pink-100 text-pink-800',
-      'Household': 'bg-gray-100 text-gray-800',
-      'Other': 'bg-gray-100 text-gray-800'
+      'Dairy': 'bg-blue-100 text-blue-800 border-blue-200',
+      'Produce': 'bg-green-100 text-green-800 border-green-200',
+      'Meat': 'bg-red-100 text-red-800 border-red-200',
+      'Bakery': 'bg-amber-100 text-amber-800 border-amber-200',
+      'Grains': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'Pulses': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      'Beverages': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+      'Spices': 'bg-orange-100 text-orange-800 border-orange-200',
+      'Condiments': 'bg-purple-100 text-purple-800 border-purple-200',
+      'Snacks': 'bg-pink-100 text-pink-800 border-pink-200',
+      'Nuts & Seeds': 'bg-teal-100 text-teal-800 border-teal-200',
+      'Frozen Foods': 'bg-sky-100 text-sky-800 border-sky-200',
+      'Personal Care': 'bg-rose-100 text-rose-800 border-rose-200',
+      'Household': 'bg-gray-100 text-gray-800 border-gray-200',
+      'Oil': 'bg-lime-100 text-lime-800 border-lime-200',
+      'Other': 'bg-slate-100 text-slate-800 border-slate-200'
     }
     return colors[category] || colors['Other']
   }
@@ -170,6 +177,9 @@ export function ReceiptDetailView({ receipt }: ReceiptDetailViewProps) {
                   <TableHead className="w-24">Unit Price</TableHead>
                   <TableHead className="w-24">Total</TableHead>
                   <TableHead className="w-28">Category</TableHead>
+                  <TableHead className="w-32">Expense Tag</TableHead>
+                  <TableHead className="w-24">Track Qty</TableHead>
+                  <TableHead className="w-24">Qty Unit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -195,10 +205,25 @@ export function ReceiptDetailView({ receipt }: ReceiptDetailViewProps) {
                     <TableCell>
                       <Badge 
                         variant="secondary" 
-                        className={`${getCategoryColor(item.product.category)} text-xs`}
+                        className={`${getCategoryColor(item.product.category)} text-xs border`}
                       >
                         {item.product.category}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">
+                        {item.expenseTag || '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">
+                        {item.trackQuantity || '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">
+                        {item.quantityUnit || '-'}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}

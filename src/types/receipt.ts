@@ -17,6 +17,9 @@ export interface ReceiptItem {
   quantity: number
   unitPrice: number
   totalPrice: number
+  expenseTag?: string | null
+  trackQuantity?: number | null
+  quantityUnit?: string | null
   createdAt: string
   product: {
     id: string

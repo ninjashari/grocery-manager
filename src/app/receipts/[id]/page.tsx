@@ -63,6 +63,9 @@ export default async function ReceiptDetailPage({ params }: ReceiptDetailPagePro
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.totalPrice,
+      expenseTag: item.expenseTag,
+      trackQuantity: item.trackQuantity,
+      quantityUnit: item.quantityUnit,
       createdAt: item.createdAt.toISOString(),
       product: {
         id: item.product.id,

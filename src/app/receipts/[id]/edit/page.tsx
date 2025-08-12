@@ -5,9 +5,9 @@ import { db } from '@/lib/db'
 import { ReceiptEditForm } from '@/components/receipts/ReceiptEditForm'
 
 interface EditReceiptPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 async function getReceipt(id: string, userId: string) {
@@ -43,7 +43,8 @@ export default async function EditReceiptPage({ params }: EditReceiptPageProps) 
     redirect('/auth/signin')
   }
 
-  const receipt = await getReceipt(params.id, session.user.id)
+  const { id } = await params
+  const receipt = await getReceipt(id, session.user.id)
 
   if (!receipt) {
     notFound()
@@ -58,7 +59,21 @@ export default async function EditReceiptPage({ params }: EditReceiptPageProps) 
         </p>
       </div>
 
-      <ReceiptEditForm receipt={receipt} />
+      <ReceiptEditForm receipt={{
+        ...receipt,
+        date: receipt.date.toISOString(),
+        createdAt: receipt.createdAt.toISOString(),
+        updatedAt: receipt.updatedAt.toISOString(),
+        imageUrl: receipt.imageUrl || undefined,
+        items: receipt.items.map(item => ({
+          ...item,
+          createdAt: item.createdAt.toISOString(),
+          product: {
+            ...item.product,
+            brand: item.product.brand ? { name: item.product.brand.name } : undefined
+          }
+        }))
+      }} />
     </div>
   )
 }
